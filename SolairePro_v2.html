@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SolairePro">
+<meta name="theme-color" content="#0a0a0f">
+<title>SolairePro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  window._fbModules = { initializeApp, getFirestore, doc, setDoc, onSnapshot, getDoc };
+</script>
+<style>
+/* ===== DESIGN SYSTEM ===== */
+:root {
+  --black: #0a0a0f;
+  --deep: #0f0f1a;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.07);
+  --surface3: rgba(255,255,255,0.11);
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0ff;
+  --text2: rgba(240,240,255,0.55);
+  --text3: rgba(240,240,255,0.28);
+  --sol: #ffb830;
+  --sol2: #ff8c00;
+  --sol-glow: rgba(255,184,48,0.25);
+  --sol-glow2: rgba(255,184,48,0.08);
+  --mint: #00e5a0;
+  --mint-glow: rgba(0,229,160,0.2);
+  --sky: #38bdf8;
+  --rose: #fb7185;
+  --violet: #a78bfa;
+  --tab-h: 80px;
+  --safe-top: env(safe-area-inset-top,0px);
+  --safe-bot: env(safe-area-inset-bottom,0px);
+  --r: 20px;
+  --r2: 14px;
+  --ff: 'Outfit', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+@media (prefers-color-scheme:light){:root.theme-auto{
+  --black:#f4f4fa; --deep:#eaeaf5; --surface:rgba(0,0,0,0.04);
+  --surface2:rgba(0,0,0,0.06); --surface3:rgba(0,0,0,0.09);
+  --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.13);
+  --text:#0a0a1a; --text2:rgba(10,10,26,0.55); --text3:rgba(10,10,26,0.28);
+  --sol-glow2:rgba(255,184,48,0.12);
+}}
+:root.theme-light{
+  --black:#f4f4fa; --deep:#eaeaf5; --surface:rgba(0,0,0,0.04);
+  --surface2:rgba(0,0,0,0.06); --surface3:rgba(0,0,0,0.09);
+  --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.13);
+  --text:#0a0a1a; --text2:rgba(10,10,26,0.55); --text3:rgba(10,10,26,0.28);
+  --sol-glow2:rgba(255,184,48,0.12);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--black)}
+body{font-family:var(--ff);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ===== ANIMATED BACKGROUND ===== */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.6}
+.bg-orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb1{width:400px;height:400px;background:radial-gradient(circle,rgba(255,184,48,0.15),transparent 70%);top:-100px;right:-100px;animation:orbFloat 12s ease-in-out infinite}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,229,160,0.08),transparent 70%);bottom:-150px;left:-150px;animation:orbFloat 16s ease-in-out infinite reverse}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(56,189,248,0.07),transparent 70%);top:40%;left:30%;animation:orbFloat 20s ease-in-out infinite 4s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.97)}}
+
+/* ===== SPLASH ===== */
+#splash{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:0}
+.splash-sun{width:90px;height:90px;position:relative;margin-bottom:28px}
+.splash-core{width:48px;height:48px;background:conic-gradient(from 0deg,#ffb830,#ff8c00,#ffb830);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 30px rgba(255,184,48,0.6),0 0 60px rgba(255,184,48,0.3);animation:coreBreath 2s ease-in-out infinite}
+.splash-rays{position:absolute;inset:0;animation:rotateSlow 8s linear infinite}
+.splash-ray{position:absolute;width:4px;border-radius:2px;background:linear-gradient(to top,transparent,#ffb830);transform-origin:bottom center}
+@keyframes coreBreath{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 30px rgba(255,184,48,0.6),0 0 60px rgba(255,184,48,0.3)}50%{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 0 50px rgba(255,184,48,0.8),0 0 100px rgba(255,184,48,0.4)}}
+@keyframes rotateSlow{to{transform:rotate(360deg)}}
+.splash-brand{font-size:32px;font-weight:800;letter-spacing:-1.5px;background:linear-gradient(135deg,#ffb830,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.splash-tagline{font-size:14px;color:var(--text2);margin-top:8px;font-weight:400;letter-spacing:0.3px}
+.splash-loader{width:120px;height:2px;background:var(--surface3);border-radius:1px;margin-top:40px;overflow:hidden}
+.splash-loader-bar{height:100%;background:linear-gradient(90deg,#ffb830,#ff8c00);border-radius:1px;animation:loaderAnim 1.2s ease-out forwards}
+@keyframes loaderAnim{from{width:0}to{width:100%}}
+.splash-sync{font-size:12px;color:var(--text3);margin-top:12px;font-family:var(--mono);letter-spacing:0.5px}
+
+/* ===== FIREBASE SETUP ===== */
+#fb-setup{position:fixed;inset:0;background:var(--black);z-index:8888;overflow-y:auto;display:none;padding:calc(var(--safe-top) + 20px) 20px calc(var(--safe-bot) + 40px)}
+#fb-setup.show{display:block}
+.setup-hero{text-align:center;padding:40px 0 32px}
+.setup-icon{width:70px;height:70px;background:linear-gradient(135deg,rgba(255,184,48,0.2),rgba(255,140,0,0.1));border-radius:24px;border:1px solid rgba(255,184,48,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 0 30px rgba(255,184,48,0.15)}
+.setup-h1{font-size:28px;font-weight:800;letter-spacing:-1px}
+.setup-p{color:var(--text2);font-size:15px;margin-top:8px;line-height:1.5}
+.setup-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:12px}
+.step-num{display:inline-flex;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#ffb830,#ff8c00);color:#000;font-size:12px;font-weight:700;align-items:center;justify-content:center;margin-bottom:10px}
+.step-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.step-body{font-size:13px;color:var(--text2);line-height:1.6}
+.step-body a{color:var(--sol);text-decoration:none}
+.step-body code{font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--sol)}
+
+/* ===== WIZARD ===== */
+#wizard{position:fixed;inset:0;background:var(--black);z-index:7000;overflow-y:auto;display:none;padding:calc(var(--safe-top)+16px) 20px calc(var(--safe-bot)+20px)}
+#wizard.show{display:flex;flex-direction:column;gap:0}
+.wiz-dots{display:flex;gap:6px;justify-content:center;padding:12px 0 28px}
+.wdot{height:4px;border-radius:2px;background:var(--surface3);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.wdot.on{background:var(--sol);width:32px}
+.wdot.done{background:var(--mint)}
+.wdot{width:20px}
+.wiz-step{display:none;flex-direction:column;gap:18px;flex:1;animation:fadeSlideUp .35s ease both}
+.wiz-step.on{display:flex}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.wiz-icon{width:76px;height:76px;border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.wi-sol{background:linear-gradient(135deg,rgba(255,184,48,.18),rgba(255,140,0,.08));border:1px solid rgba(255,184,48,.25);box-shadow:0 0 40px rgba(255,184,48,.12)}
+.wi-mint{background:linear-gradient(135deg,rgba(0,229,160,.15),rgba(0,229,160,.05));border:1px solid rgba(0,229,160,.2);box-shadow:0 0 40px rgba(0,229,160,.1)}
+.wi-sky{background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(56,189,248,.05));border:1px solid rgba(56,189,248,.2)}
+.wi-ok{background:linear-gradient(135deg,rgba(0,229,160,.2),rgba(0,229,160,.05));border:1px solid rgba(0,229,160,.3);box-shadow:0 0 50px rgba(0,229,160,.15)}
+.wiz-head{text-align:center}
+.wiz-head h1{font-size:26px;font-weight:800;letter-spacing:-.8px}
+.wiz-head p{color:var(--text2);font-size:14px;margin-top:8px;line-height:1.5}
+
+/* ===== FORM ELEMENTS ===== */
+.fg{display:flex;flex-direction:column;gap:6px}
+.fl{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.6px;text-transform:uppercase;padding-left:2px}
+.fi,.fs{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:12px;
+  color:var(--text);font-size:16px;padding:14px 16px;width:100%;font-family:var(--ff);
+  outline:none;transition:border-color .2s,background .2s,box-shadow .2s;
+  -webkit-appearance:none;appearance:none
+}
+.fi:focus,.fs:focus{border-color:var(--sol);background:rgba(255,184,48,.04);box-shadow:0 0 0 3px rgba(255,184,48,.12)}
+.fh{font-size:12px;color:var(--text3);padding-left:2px}
+
+/* ===== BUTTONS ===== */
+.btn{border:none;border-radius:14px;padding:16px 20px;font-size:16px;font-weight:700;cursor:pointer;width:100%;font-family:var(--ff);letter-spacing:-.2px;transition:opacity .15s,transform .15s,box-shadow .2s;position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .15s}
+.btn:active::after{background:rgba(0,0,0,.12)}
+.btn:active{transform:scale(.975)}
+.btn-sol{background:linear-gradient(135deg,#ffb830,#ff8c00);color:#000;box-shadow:0 4px 20px rgba(255,184,48,.35)}
+.btn-sol:hover{box-shadow:0 6px 30px rgba(255,184,48,.5)}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-mint{background:linear-gradient(135deg,#00e5a0,#00c480);color:#000;box-shadow:0 4px 20px rgba(0,229,160,.3)}
+.btn-sm{padding:10px 16px;font-size:14px;border-radius:10px;width:auto}
+.btn-icon-row{display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* ===== MAIN APP ===== */
+#app{display:none;flex-direction:column;height:100%;position:relative;z-index:10}
+#app.show{display:flex}
+#screens{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:calc(var(--tab-h) + var(--safe-bot) + 12px);padding-top:calc(var(--safe-top) + 0px)}
+.screen.on{display:block}
+.screen::-webkit-scrollbar{display:none}
+@-webkit-scrollbar{display:none}
+
+/* ===== TOP NAV ===== */
+.topnav{position:sticky;top:0;z-index:100;padding:calc(var(--safe-top) + 12px) 20px 16px;background:linear-gradient(to bottom,var(--black) 60%,transparent);display:flex;align-items:flex-end;justify-content:space-between}
+.topnav-left{}
+.topnav-sub{font-size:12px;font-weight:600;color:var(--sol);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.topnav-title{font-size:32px;font-weight:800;letter-spacing:-1.2px;line-height:1}
+.topnav-right{display:flex;gap:10px;align-items:center}
+.nbtn{width:38px;height:38px;border-radius:12px;background:var(--surface);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .2s}
+.nbtn:hover{background:var(--surface2);color:var(--sol);border-color:rgba(255,184,48,.3)}
+
+/* ===== CONTENT WRAPPER ===== */
+.pw{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+
+/* ===== GLASS CARDS ===== */
+.gc{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  overflow:hidden;position:relative
+}
+.gc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04),transparent);pointer-events:none}
+.gc-pad{padding:18px 20px}
+.gc-glow-sol::after{content:'';position:absolute;top:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--sol),transparent);opacity:.6}
+.gc-glow-mint::after{content:'';position:absolute;top:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--mint),transparent);opacity:.5}
+
+/* ===== BIG METRIC ===== */
+.metric-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.metric-label.sol{color:var(--sol)}
+.metric-label.mint{color:var(--mint)}
+.metric-label.sky{color:var(--sky)}
+.metric-num{font-family:var(--ff);font-size:52px;font-weight:900;letter-spacing:-3px;line-height:.9}
+.metric-unit{font-size:18px;font-weight:500;opacity:.6;letter-spacing:-0.5px}
+.metric-sub{font-size:12px;color:var(--text2);margin-top:8px;font-weight:500}
+
+/* ===== ALERT ===== */
+.alert{display:flex;align-items:center;gap:12px;background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.2);border-radius:14px;padding:14px 16px}
+.alert-icon{flex-shrink:0;width:32px;height:32px;border-radius:10px;background:rgba(251,113,133,.15);display:flex;align-items:center;justify-content:center}
+.alert-text{font-size:14px;font-weight:600;color:var(--rose)}
+
+/* ===== TWO COL ===== */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini-metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px}
+.mm-val{font-size:22px;font-weight:800;letter-spacing:-.8px}
+.mm-lbl{font-size:11px;color:var(--text2);font-weight:600;margin-top:4px}
+
+/* ===== MONTH GRID ===== */
+.month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mc{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:14px;padding:12px 10px;cursor:pointer;
+  transition:all .2s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden
+}
+.mc:active{transform:scale(.94)}
+.mc.has{border-color:rgba(255,184,48,.25);background:rgba(255,184,48,.04)}
+.mc.today{border-color:var(--sol);box-shadow:0 0 0 1px rgba(255,184,48,.2),inset 0 0 20px rgba(255,184,48,.04)}
+.mc.miss{border-color:rgba(251,113,133,.3);background:rgba(251,113,133,.03)}
+.mc-name{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)}
+.mc-val{font-size:17px;font-weight:800;letter-spacing:-.5px;margin-top:5px}
+.mc-rev{font-size:10px;font-weight:600;color:var(--mint);margin-top:2px}
+.mc-dot{position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%}
+
+/* ===== SECTION ===== */
+.sec-title{font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);padding:0 4px;margin-top:6px;margin-bottom:-2px}
+
+/* ===== CHART ===== */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;position:relative}
+.chart-title{font-size:13px;font-weight:700;letter-spacing:-.2px;margin-bottom:14px}
+
+/* ===== TAB BAR ===== */
+#tabbar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(10,10,15,.88);
+  backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding:12px 0 0;
+  padding-bottom:max(var(--safe-bot),10px);
+  z-index:500;height:var(--tab-h)
+}
+.ti{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:0 2px;transition:all .2s}
+.ti-icon{width:44px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:12px;transition:all .25s cubic-bezier(.4,0,.2,1);position:relative}
+.ti.on .ti-icon{background:linear-gradient(135deg,rgba(255,184,48,.2),rgba(255,140,0,.1));box-shadow:0 0 20px rgba(255,184,48,.2)}
+.ti-label{font-size:10px;font-weight:600;color:var(--text3);transition:color .2s;letter-spacing:.2px}
+.ti.on .ti-label{color:var(--sol)}
+.ti-icon svg{color:var(--text3);transition:color .2s}
+.ti.on .ti-icon svg{color:var(--sol)}
+.ti-pip{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--rose);display:none}
+.ti-pip.show{display:block}
+
+/* ===== BOTTOM SHEET ===== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;display:none;backdrop-filter:blur(6px)}
+.overlay.on{display:block}
+.sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:900;
+  background:linear-gradient(to bottom,#141420,#0f0f1a);
+  border:1px solid var(--border);
+  border-radius:24px 24px 0 0;
+  padding:0 20px max(var(--safe-bot),20px);
+  transform:translateY(100%);
+  transition:transform .42s cubic-bezier(.32,.72,0,1);
+  max-height:92vh;overflow-y:auto
+}
+.sheet.on{transform:translateY(0)}
+.sheet::-webkit-scrollbar{display:none}
+.sheet-handle{width:40px;height:5px;background:var(--surface3);border-radius:3px;margin:14px auto 22px}
+.sheet-title{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:22px}
+
+/* ===== EDF OA ROWS ===== */
+.oa-row{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;transition:all .2s}
+.oa-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.oa-row.has-tarif::before{background:linear-gradient(to bottom,var(--sol),var(--sol2))}
+.oa-row.no-tarif::before{background:var(--rose)}
+.oa-period-n{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3)}
+.oa-dates{font-size:12px;color:var(--text2);margin-top:2px;font-family:var(--mono)}
+.oa-kwh{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-top:6px}
+.oa-tarif-badge{display:inline-flex;align-items:center;padding:3px 8px;background:rgba(255,184,48,.12);border:1px solid rgba(255,184,48,.2);border-radius:20px;font-size:11px;font-family:var(--mono);color:var(--sol);font-weight:500;margin-top:4px}
+.oa-rev{font-size:26px;font-weight:900;letter-spacing:-1px;color:var(--mint);white-space:nowrap}
+
+/* ===== TOTAL CARD ===== */
+.total-card{background:linear-gradient(135deg,rgba(0,229,160,.1),rgba(0,196,128,.04));border:1px solid rgba(0,229,160,.2);border-radius:var(--r);padding:22px 20px;position:relative;overflow:hidden;text-align:center}
+.total-card::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(0,229,160,.12),transparent 70%);pointer-events:none}
+.tc-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--mint);margin-bottom:10px}
+.tc-num{font-size:56px;font-weight:900;letter-spacing:-3px;color:var(--mint);line-height:1}
+.tc-unit{font-size:20px;font-weight:500;opacity:.7}
+.tc-sub{font-size:13px;color:rgba(0,229,160,.6);margin-top:8px;font-weight:500}
+
+/* ===== SETTINGS ===== */
+.sl{border-radius:var(--r);overflow:hidden;background:var(--surface);border:1px solid var(--border)}
+.si{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.si:last-child{border-bottom:none}
+.si:active{background:var(--surface2)}
+.si-left{display:flex;align-items:center;gap:12px}
+.si-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.si-label{font-size:15px;font-weight:600}
+.si-val{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:4px}
+.si-chev{color:var(--text3);font-size:18px;font-weight:300;line-height:1}
+
+/* ===== TARIF ROW ===== */
+.tr{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:all .2s}
+.tr-info{flex:1}
+.tr-period{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.tr-price{font-size:20px;font-weight:800;letter-spacing:-.8px;color:var(--sol);margin-top:3px}
+.tr-actions{display:flex;gap:6px}
+.tr-btn{border:1px solid var(--border);background:var(--surface2);border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ff);color:var(--text2);transition:all .2s}
+.tr-btn.del{color:var(--rose);border-color:rgba(251,113,133,.2)}
+.tr-btn:active{opacity:.7}
+
+/* ===== YEAR NAV ===== */
+.ynav{display:flex;align-items:center;justify-content:center;gap:18px;padding:10px 0 4px}
+.ybtn{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--ff);transition:all .2s}
+.ybtn:active{opacity:.7}
+.yyear{font-size:24px;font-weight:800;letter-spacing:-.8px;min-width:60px;text-align:center}
+
+/* ===== TOGGLE ===== */
+.toggle-wrap{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px}
+.tbtn{flex:1;padding:10px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--text2);font-family:var(--ff);transition:all .2s;letter-spacing:-.2px}
+.tbtn.on{background:var(--surface3);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+/* ===== METEO ===== */
+.meteo-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.meteo-row::-webkit-scrollbar{display:none}
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 10px;min-width:74px;text-align:center;flex-shrink:0;transition:all .2s}
+.mcard.today{border-color:rgba(255,184,48,.4);background:rgba(255,184,48,.05)}
+.mday{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+.micon{font-size:22px;margin:6px 0}
+.mtemp{font-size:13px;font-weight:700}
+.mkwh{font-size:10px;color:var(--sol);font-weight:600;margin-top:3px;font-family:var(--mono)}
+
+/* ===== SYNC STATUS ===== */
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;font-family:var(--mono);padding:4px 10px;border-radius:20px}
+.sync-badge.ok{background:rgba(0,229,160,.1);color:var(--mint);border:1px solid rgba(0,229,160,.2)}
+.sync-badge.err{background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2)}
+.sync-badge.sync{background:rgba(255,184,48,.1);color:var(--sol);border:1px solid rgba(255,184,48,.2)}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sync-dot.ok{background:var(--mint);box-shadow:0 0 6px var(--mint)}
+.sync-dot.err{background:var(--rose)}
+.sync-dot.sync{background:var(--sol);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ===== PDF BTN ===== */
+.pdf-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .2s}
+.pdf-row:active{opacity:.7}
+.pdf-icon{width:36px;height:36px;border-radius:10px;background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ===== TOAST ===== */
+#toast{position:fixed;bottom:calc(var(--tab-h) + var(--safe-bot) + 16px);left:50%;transform:translateX(-50%) translateY(16px);background:rgba(20,20,32,.95);color:var(--text);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none;white-space:nowrap;backdrop-filter:blur(20px);border:1px solid var(--border2);letter-spacing:-.1px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== CLOUD SETUP MODAL ===== */
+#cloud-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;display:none;backdrop-filter:blur(10px);padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center}
+#cloud-modal.show{display:flex}
+.cloud-box{background:var(--deep);border:1px solid var(--border);border-radius:24px;padding:28px 24px;width:100%;max-width:460px;margin:auto;display:flex;flex-direction:column;gap:16px}
+.cloud-h1{font-size:22px;font-weight:800;letter-spacing:-.8px}
+.cloud-p{font-size:13px;color:var(--text2);line-height:1.6}
+.code-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8;overflow-x:auto}
+
+/* ===== ANIMATIONS ===== */
+@keyframes ain{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.ain{animation:ain .4s cubic-bezier(.32,.72,0,1) both}
+.d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}.d4{animation-delay:.24s}
+
+/* ===== RESPONSIVE PC ===== */
+@media(min-width:540px){
+  #splash,#fb-setup,#wizard,#app{max-width:430px;margin:0 auto}
+  body{background:#06060d;display:flex;justify-content:center}
+  #tabbar{max-width:430px;left:50%;transform:translateX(-50%);border-radius:0 0 0 0}
+  #toast{max-width:360px}
+  .overlay{position:fixed}
+  .sheet{max-width:430px;left:50%;transform:translateX(-50%) translateY(100%);border-radius:24px;bottom:0}
+  .sheet.on{transform:translateX(-50%) translateY(0)}
+  #splash,#fb-setup,#wizard,#cloud-modal .cloud-box{border-radius:0}
+  #wizard,#fb-setup{height:100%;overflow-y:auto}
+}
+@media(min-width:540px){
+  #splash{position:fixed;height:100%;top:0;border-radius:0}
+  body::before{content:'';position:fixed;inset:0;background:#06060d;z-index:-1}
+}
+</style>
+</head>
+<body>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+<div class="bg-orb orb3"></div>
+
+<!-- ===== SPLASH ===== -->
+<div id="splash">
+  <div class="splash-sun" id="splash-sun"></div>
+  <div class="splash-brand">SolairePro</div>
+  <div class="splash-tagline">Production solaire · EDF OA · Météo</div>
+  <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+  <div class="splash-sync" id="splash-sync">INITIALISATION…</div>
+</div>
+
+<!-- ===== CLOUD SETUP (first time) ===== -->
+<div id="cloud-modal">
+  <div class="cloud-box">
+    <div style="text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">☁️</div>
+      <div class="cloud-h1">Synchronisation cloud</div>
+      <div class="cloud-p" style="margin-top:8px">Pour accéder à vos données depuis tous vos appareils, configurez Firebase (gratuit). Sinon, continuer en local uniquement.</div>
+    </div>
+    <div class="cloud-p"><strong>1.</strong> Allez sur <strong style="color:var(--sol)">console.firebase.google.com</strong><br>
+    <strong>2.</strong> Créez un projet → Firestore Database → Mode test<br>
+    <strong>3.</strong> Ajoutez une app Web → copiez la config<br>
+    <strong>4.</strong> Collez la config ci-dessous :</div>
+    <div class="fg">
+      <div class="fl">Config Firebase (JSON)</div>
+      <textarea class="fi" id="fb-config-input" rows="6" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
+    </div>
+    <div class="fg">
+      <div class="fl">ID installation (unique par utilisateur)</div>
+      <input class="fi" id="fb-user-id" placeholder="Ex: maison-dupont-2017" autocomplete="off">
+      <div class="fh">Permet de séparer les données de chaque utilisateur</div>
+    </div>
+    <button class="btn btn-sol" onclick="connectFirebase()">Connecter Firebase ↗</button>
+    <button class="btn btn-ghost" onclick="skipCloud()">Continuer sans cloud (local)</button>
+  </div>
+</div>
+
+<!-- ===== FIREBASE SETUP PAGE ===== -->
+<div id="fb-setup">
+  <div class="setup-hero">
+    <div class="setup-icon">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 4 L28 26 L16 22 L4 26 Z" stroke="#ffb830" stroke-width="2" fill="rgba(255,184,48,.15)"/><line x1="16" y1="4" x2="16" y2="22" stroke="#ffb830" stroke-width="2"/></svg>
+    </div>
+    <div class="setup-h1">Configurer Firebase</div>
+    <div class="setup-p">Pour synchroniser vos données sur tous vos appareils</div>
+  </div>
+</div>
+
+<!-- ===== WIZARD ===== -->
+<div id="wizard">
+  <div class="wiz-dots" id="wdots">
+    <div class="wdot on" id="wd0"></div>
+    <div class="wdot" id="wd1"></div>
+    <div class="wdot" id="wd2"></div>
+    <div class="wdot" id="wd3"></div>
+  </div>
+
+  <!-- Step 0 -->
+  <div class="wiz-step on" id="ws0">
+    <div class="wiz-head">
+      <div class="wiz-icon wi-sol"><svg width="34" height="34" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="9" fill="rgba(255,184,48,.8)"/><g stroke="#ffb830" stroke-width="2" stroke-linecap="round"><line x1="17" y1="3" x2="17" y2="7"/><line x1="17" y1="27" x2="17" y2="31"/><line x1="3" y1="17" x2="7" y2="17"/><line x1="27" y1="17" x2="31" y2="17"/><line x1="7.5" y1="7.5" x2="10.5" y2="10.5"/><line x1="23.5" y1="23.5" x2="26.5" y2="26.5"/><line x1="26.5" y1="7.5" x2="23.5" y2="10.5"/><line x1="10.5" y1="23.5" x2="7.5" y2="26.5"/></g></svg></div>
+      <h1>Votre installation</h1>
+      <p>Configurons SolairePro. Ces données seront synchronisées sur tous vos appareils.</p>
+    </div>
+    <div class="fg"><div class="fl">Nom de l'installation</div><input class="fi" id="w-name" type="text" placeholder="Ex: Maison Dupont" autocomplete="off"></div>
+    <div class="fg"><div class="fl">Ville</div><input class="fi" id="w-city" type="text" placeholder="Ex: Lyon" autocomplete="off"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><div class="fl">Panneaux</div><input class="fi" id="w-panels" type="number" placeholder="16" min="1"></div>
+      <div class="fg"><div class="fl">Puissance (kWc)</div><input class="fi" id="w-power" type="number" placeholder="3.0" step="0.1"></div>
+    </div>
+    <button class="btn btn-sol" onclick="wNext(0)">Continuer →</button>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="wiz-step" id="ws1">
+    <div class="wiz-head">
+      <div class="wiz-icon wi-mint"><svg width="34" height="34" viewBox="0 0 34 34" fill="none"><rect x="5" y="4" width="24" height="26" rx="4" stroke="#00e5a0" stroke-width="2"/><line x1="10" y1="12" x2="24" y2="12" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="18" x2="24" y2="18" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="24" x2="17" y2="24" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <h1>Contrat EDF OA</h1>
+      <p>La date anniversaire détermine les périodes tarifaires automatiquement.</p>
+    </div>
+    <div class="fg"><div class="fl">Date de début du contrat</div><input class="fi" id="w-cdate" type="date"><div class="fh">Votre première facture EDF OA</div></div>
+    <div class="fg"><div class="fl">Tarif 1ère période (€/kWh)</div><input class="fi" id="w-tarif1" type="number" placeholder="0.1362" step="0.0001"></div>
+    <div class="fg"><div class="fl">Méthode de saisie</div><select class="fs" id="w-method"><option value="monthly">Production mensuelle directe (kWh)</option><option value="index">Index compteur cumulatif</option></select></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost" style="flex:0 0 54px;padding:16px 0" onclick="wPrev(1)">←</button><button class="btn btn-sol" style="flex:1" onclick="wNext(1)">Continuer →</button></div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="wiz-step" id="ws2">
+    <div class="wiz-head">
+      <div class="wiz-icon wi-sky"><svg width="34" height="34" viewBox="0 0 34 34" fill="none"><path d="M10 22 C10 18.7 12.7 16 16 16 C16.4 13.2 18.7 11 21.5 11 C24.5 11 27 13.5 27 16.5 C28.7 17.1 30 18.7 30 20.5 C30 22.9 28.1 25 25.5 25 L10.5 25 C8 25 6 23.2 6 21 Z" stroke="#38bdf8" stroke-width="2" fill="rgba(56,189,248,.08)"/></svg></div>
+      <h1>Localisation</h1>
+      <p>Pour les prévisions de production solaire basées sur la météo réelle.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><div class="fl">Latitude</div><input class="fi" id="w-lat" type="number" placeholder="45.7640" step="0.0001"></div>
+      <div class="fg"><div class="fl">Longitude</div><input class="fi" id="w-lon" type="number" placeholder="4.8357" step="0.0001"></div>
+    </div>
+    <button class="btn btn-ghost btn-icon-row" onclick="doGeolocate('w-lat','w-lon')">📍 Utiliser ma position GPS</button>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost" style="flex:0 0 54px;padding:16px 0" onclick="wPrev(2)">←</button><button class="btn btn-sol" style="flex:1" onclick="wNext(2)">Continuer →</button></div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="wiz-step" id="ws3">
+    <div class="wiz-head">
+      <div class="wiz-icon wi-ok"><svg width="34" height="34" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="13" stroke="#00e5a0" stroke-width="2"/><path d="M11 17 L15.5 21.5 L23 13" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h1>Tout est prêt !</h1>
+      <p>Votre installation est configurée. Commencez à saisir vos relevés pour voir vos revenus EDF OA calculés automatiquement.</p>
+    </div>
+    <div class="gc gc-pad" style="background:rgba(0,229,160,.04);border-color:rgba(0,229,160,.15)">
+      <div style="font-size:14px;color:var(--text2);line-height:2">
+        <div>📅 Saisissez vos relevés dans <strong style="color:var(--text)">Relevés</strong></div>
+        <div>💶 <strong style="color:var(--text)">EDF OA</strong> calcule vos revenus automatiquement</div>
+        <div>⚙️ Ajoutez vos tarifs dans <strong style="color:var(--text)">Réglages</strong></div>
+        <div>☁️ Vos données sont <strong style="color:var(--mint)">synchronisées</strong> sur tous vos appareils</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost" style="flex:0 0 54px;padding:16px 0" onclick="wPrev(3)">←</button><button class="btn btn-mint" style="flex:1" onclick="finishWiz()">Commencer →</button></div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <div id="screens">
+
+    <!-- HOME -->
+    <div class="screen on" id="s-home">
+      <div class="topnav">
+        <div class="topnav-left">
+          <div class="topnav-sub" id="h-install-name">SOLAIREPRO</div>
+          <div class="topnav-title">Accueil</div>
+        </div>
+        <div class="topnav-right">
+          <div id="sync-indicator" class="sync-badge sync"><div class="sync-dot sync"></div>SYNC</div>
+        </div>
+      </div>
+      <div class="pw">
+        <div class="alert" id="alert-miss" style="display:none">
+          <div class="alert-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#fb7185" stroke-width="1.5"/><line x1="8" y1="5" x2="8" y2="9" stroke="#fb7185" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="12" r="1" fill="#fb7185"/></svg></div>
+          <div class="alert-text" id="alert-miss-txt">Relevé manquant</div>
+        </div>
+        <div class="gc gc-pad gc-glow-sol ain">
+          <div class="metric-label sol">⚡ Production · <span id="h-year">2025</span></div>
+          <div class="metric-num" id="h-kwh">—<span class="metric-unit"> kWh</span></div>
+          <div class="metric-sub" id="h-kwh-sub">Chargement…</div>
+        </div>
+        <div class="gc gc-pad gc-glow-mint ain d1">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between">
+            <div>
+              <div class="metric-label mint">💶 Revenu EDF OA estimé</div>
+              <div class="metric-num" style="color:var(--mint)" id="h-rev">—<span class="metric-unit"> €</span></div>
+            </div>
+            <div style="width:44px;height:44px;border-radius:14px;background:rgba(0,229,160,.12);border:1px solid rgba(0,229,160,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#00e5a0" stroke-width="1.5"/><path d="M11 6.5v1.2M11 14.3v1.2M7.8 9.5c0-1 1.2-1.8 3.2-1.8s3.2.8 3.2 1.8-1.2 1.6-3.2 2c-2 .4-3.2 1-3.2 2s1.2 1.8 3.2 1.8 3.2-.8 3.2-1.8" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="metric-sub" id="h-rev-sub">Basé sur vos tarifs EDF OA</div>
+        </div>
+        <div class="row2 ain d2">
+          <div class="mini-metric gc-glow-sol" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;cursor:pointer" onclick="switchTab('releves')">
+            <div class="mm-lbl" id="h-month-lbl" style="color:var(--sol)">CE MOIS</div>
+            <div class="mm-val" id="h-month-kwh">—</div>
+            <div style="font-size:11px;color:var(--mint);font-weight:600;margin-top:3px" id="h-month-rev">— €</div>
+          </div>
+          <div class="mini-metric" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px">
+            <div class="mm-lbl" style="color:var(--text2)">TARIF ACTIF</div>
+            <div class="mm-val" id="h-tarif" style="font-size:17px">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">€/kWh</div>
+          </div>
+        </div>
+        <div class="sec-title ain d3">🌤 Prévisions météo · 7 jours</div>
+        <div class="meteo-row ain d3" id="meteo-row">
+          <div class="mcard"><div class="mday">…</div><div class="micon">⏳</div></div>
+        </div>
+        <div class="sec-title">📊 Barres mensuelles</div>
+        <div class="chart-wrap ain d4">
+          <canvas id="chart-home" height="130"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- RELEVES -->
+    <div class="screen" id="s-releves">
+      <div class="topnav">
+        <div class="topnav-left">
+          <div class="topnav-sub">PRODUCTION</div>
+          <div class="topnav-title">Relevés</div>
+        </div>
+        <div class="topnav-right">
+          <button class="nbtn" onclick="document.getElementById('imp-xl').click()" title="Import Excel">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="6" x2="12" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="9" x2="12" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pw">
+        <div class="toggle-wrap">
+          <button class="tbtn on" id="tm-monthly" onclick="setMethod('monthly')">📊 Mensuel direct</button>
+          <button class="tbtn" id="tm-index" onclick="setMethod('index')">🔢 Index compteur</button>
+        </div>
+        <div class="ynav">
+          <button class="ybtn" onclick="chgYear(-1)">‹</button>
+          <div class="yyear" id="rel-year">2025</div>
+          <button class="ybtn" onclick="chgYear(1)">›</button>
+        </div>
+        <div class="month-grid" id="month-grid"></div>
+        <div class="row2">
+          <div class="mini-metric" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px"><div class="mm-lbl">TOTAL</div><div class="mm-val" id="stat-tot">—</div></div>
+          <div class="mini-metric" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px"><div class="mm-lbl">MOYENNE/MOIS</div><div class="mm-val" id="stat-avg">—</div></div>
+        </div>
+        <div class="mini-metric" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center"><div class="mm-lbl">MEILLEUR MOIS</div><div style="font-size:24px;font-weight:900;letter-spacing:-1px;color:var(--sol)" id="stat-best">—</div></div>
+        <div class="sec-title">Courbe de production</div>
+        <div class="chart-wrap"><canvas id="chart-prod" height="150"></canvas></div>
+        <div class="sec-title">Comparaison N vs N-1</div>
+        <div class="chart-wrap"><canvas id="chart-cmp" height="140"></canvas></div>
+      </div>
+    </div>
+
+    <!-- EDF OA -->
+    <div class="screen" id="s-oa">
+      <div class="topnav">
+        <div class="topnav-left">
+          <div class="topnav-sub">CONTRAT</div>
+          <div class="topnav-title">EDF OA</div>
+        </div>
+        <div class="topnav-right">
+          <button class="nbtn" onclick="openPdfSheet()">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M10 2 H5 C4.4 2 4 2.4 4 3 V15 C4 15.6 4.4 16 5 16 H13 C13.6 16 14 15.6 14 15 V6 L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 2 V6 H14" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="7" y1="10" x2="11" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="13" x2="11" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pw">
+        <div class="total-card ain">
+          <div class="tc-label">☀ Total cumulé depuis le début</div>
+          <div class="tc-num" id="oa-total">—<span class="tc-unit"> €</span></div>
+          <div class="tc-sub" id="oa-total-kwh">— kWh injectés</div>
+        </div>
+        <div class="sec-title">Périodes anniversaires</div>
+        <div id="oa-rows"><div style="text-align:center;padding:32px;color:var(--text2);font-size:14px">Configurez vos tarifs dans ⚙️ Réglages</div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="s-settings">
+      <div class="topnav">
+        <div class="topnav-left">
+          <div class="topnav-sub">CONFIGURATION</div>
+          <div class="topnav-title">Réglages</div>
+        </div>
+      </div>
+      <div class="pw">
+        <div class="sync-badge" id="cloud-status-badge" style="align-self:flex-start" onclick="openCloudModal()">
+          <div class="sync-dot" id="csd"></div>
+          <span id="csdt">Vérification…</span>
+        </div>
+        <div class="sec-title">Mon installation</div>
+        <div class="sl">
+          <div class="si" onclick="editCfg('name')"><div class="si-left"><div class="si-ico" style="background:rgba(255,184,48,.1)">🏠</div><div class="si-label">Nom</div></div><div class="si-val"><span id="sv-name">—</span><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="editCfg('city')"><div class="si-left"><div class="si-ico" style="background:rgba(56,189,248,.1)">🏙</div><div class="si-label">Ville</div></div><div class="si-val"><span id="sv-city">—</span><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="editCfg('panels')"><div class="si-left"><div class="si-ico" style="background:rgba(167,139,250,.1)">🔆</div><div class="si-label">Panneaux</div></div><div class="si-val"><span id="sv-panels">—</span><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="editCfg('power')"><div class="si-left"><div class="si-ico" style="background:rgba(0,229,160,.1)">⚡</div><div class="si-label">Puissance</div></div><div class="si-val"><span id="sv-power">—</span><span class="si-chev">›</span></div></div>
+        </div>
+        <div class="sec-title">Contrat EDF OA</div>
+        <div class="sl">
+          <div class="si" onclick="editCfg('contractDate','date')"><div class="si-left"><div class="si-ico" style="background:rgba(0,229,160,.1)">📅</div><div class="si-label">Date de début</div></div><div class="si-val"><span id="sv-cdate">—</span><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="editCfg('method','select')"><div class="si-left"><div class="si-ico" style="background:rgba(255,184,48,.1)">🔢</div><div class="si-label">Méthode de saisie</div></div><div class="si-val"><span id="sv-method">—</span><span class="si-chev">›</span></div></div>
+        </div>
+        <div class="sec-title">Tarifs EDF OA</div>
+        <div id="tarif-list"></div>
+        <button class="btn btn-ghost btn-icon-row" onclick="openAddTarif()" style="font-size:14px">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="5" x2="8" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Ajouter une période tarifaire
+        </button>
+        <div class="sec-title">Localisation météo</div>
+        <div class="sl">
+          <div class="si" onclick="editCfg('lat','number')"><div class="si-left"><div class="si-ico" style="background:rgba(56,189,248,.1)">🌐</div><div class="si-label">Latitude</div></div><div class="si-val"><span id="sv-lat">—</span><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="editCfg('lon','number')"><div class="si-left"><div class="si-ico" style="background:rgba(56,189,248,.1)">🌐</div><div class="si-label">Longitude</div></div><div class="si-val"><span id="sv-lon">—</span><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="doGeolocate('sv-lat-cfg','sv-lon-cfg');geoAndSave()"><div class="si-left"><div class="si-ico" style="background:rgba(56,189,248,.1)">📍</div><div class="si-label">Géolocaliser automatiquement</div></div><div class="si-val"><span class="si-chev">›</span></div></div>
+        </div>
+        <div class="sec-title">Apparence</div>
+        <div class="sl">
+          <div class="si" onclick="cycleTheme()"><div class="si-left"><div class="si-ico" style="background:rgba(167,139,250,.1)">🎨</div><div class="si-label">Thème</div></div><div class="si-val"><span id="sv-theme">Automatique</span><span class="si-chev">›</span></div></div>
+        </div>
+        <div class="sec-title">Données & Sauvegarde</div>
+        <div class="sl">
+          <div class="si" onclick="exportJSON()"><div class="si-left"><div class="si-ico" style="background:rgba(0,229,160,.1)">📤</div><div class="si-label">Exporter JSON</div></div><div class="si-val"><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="document.getElementById('imp-json').click()"><div class="si-left"><div class="si-ico" style="background:rgba(255,184,48,.1)">📥</div><div class="si-label">Importer JSON</div></div><div class="si-val"><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="document.getElementById('cloud-modal').classList.toggle('show')"><div class="si-left"><div class="si-ico" style="background:rgba(56,189,248,.1)">☁️</div><div class="si-label">Changer de compte cloud</div></div><div class="si-val"><span class="si-chev">›</span></div></div>
+          <div class="si" onclick="doReset()" style="color:var(--rose)"><div class="si-left"><div class="si-ico" style="background:rgba(251,113,133,.1)">🗑</div><div class="si-label" style="color:var(--rose)">Réinitialiser tout</div></div><div class="si-val"><span class="si-chev" style="color:var(--rose)">›</span></div></div>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div id="tabbar">
+    <div class="ti on" data-tab="home" onclick="switchTab('home')">
+      <div class="ti-icon"><div class="ti-pip" id="pip-home"></div><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M2 11 L11 3 L20 11 V19 C20 19.6 19.6 20 19 20 H14 V14 H8 V20 H3 C2.4 20 2 19.6 2 19 V11Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+      <div class="ti-label">Accueil</div>
+    </div>
+    <div class="ti" data-tab="releves" onclick="switchTab('releves')">
+      <div class="ti-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="3" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3 8 H19" stroke="currentColor" stroke-width="1.7"/><line x1="8" y1="1" x2="8" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="14" y1="1" x2="14" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="7" y1="13" x2="9" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="13" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="15" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="ti-label">Relevés</div>
+    </div>
+    <div class="ti" data-tab="oa" onclick="switchTab('oa')">
+      <div class="ti-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M11 6v1.2M11 14.8V16M7.8 9.2c0-1 1.4-1.8 3.2-1.8s3.2.8 3.2 1.8-1.2 1.6-3.2 2-3.2 1-3.2 2 1.4 1.8 3.2 1.8 3.2-.8 3.2-1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+      <div class="ti-label">EDF OA</div>
+    </div>
+    <div class="ti" data-tab="settings" onclick="switchTab('settings')">
+      <div class="ti-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M11 2v2M11 18v2M2 11h2M18 11h2M4.2 4.2l1.4 1.4M16.4 16.4l1.4 1.4M17.8 4.2l-1.4 1.4M5.6 16.4l-1.4 1.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+      <div class="ti-label">Réglages</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SHEETS ===== -->
+<div class="overlay" id="overlay" onclick="closeSheets()"></div>
+
+<!-- Entry sheet -->
+<div class="sheet" id="sh-entry">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sh-entry-title">Saisir relevé</div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="fg" id="eg-monthly">
+      <div class="fl">Production du mois (kWh)</div>
+      <input class="fi" id="e-kwh" type="number" placeholder="Ex: 180" min="0" step="0.1" inputmode="decimal">
+    </div>
+    <div class="fg" id="eg-index" style="display:none">
+      <div class="fl">Index compteur fin de mois (kWh)</div>
+      <input class="fi" id="e-index" type="number" placeholder="Ex: 18450" min="0" step="0.1" inputmode="decimal">
+      <div class="fh" id="e-index-hint">Production calculée automatiquement</div>
+    </div>
+    <div class="fg">
+      <div class="fl">Note (optionnel)</div>
+      <input class="fi" id="e-notes" type="text" placeholder="Ex: Panneau ombragé">
+    </div>
+    <button class="btn btn-sol" onclick="saveEntry()">Enregistrer</button>
+    <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
+  </div>
+</div>
+
+<!-- Tarif sheet -->
+<div class="sheet" id="sh-tarif">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sh-tarif-title">Tarif EDF OA</div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="fg">
+      <div class="fl">Tarif (€/kWh)</div>
+      <input class="fi" id="t-price" type="number" placeholder="Ex: 0.1362" step="0.0001" inputmode="decimal">
+    </div>
+    <div class="fg">
+      <div class="fl">Numéro de période</div>
+      <input class="fi" id="t-order" type="number" placeholder="1 = première période" min="1" inputmode="numeric">
+      <div class="fh">Calculé depuis la date de début du contrat</div>
+    </div>
+    <button class="btn btn-sol" onclick="saveTarif()">Enregistrer</button>
+    <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
+  </div>
+</div>
+
+<!-- Setting sheet -->
+<div class="sheet" id="sh-setting">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sh-setting-title">Modifier</div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="fg" id="sh-setting-fg">
+      <input class="fi" id="s-input" type="text">
+    </div>
+    <button class="btn btn-sol" onclick="saveCfg()">Enregistrer</button>
+    <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
+  </div>
+</div>
+
+<!-- PDF sheet -->
+<div class="sheet" id="sh-pdf">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Générer autofacture PDF</div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="fg">
+      <div class="fl">Période anniversaire</div>
+      <select class="fs" id="pdf-sel"></select>
+    </div>
+    <button class="btn btn-sol btn-icon-row" onclick="genPDF()">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M10 2H5C4.4 2 4 2.4 4 3v12c0 .6.4 1 1 1h8c.6 0 1-.4 1-1V6L10 2z" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v4h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="7" y1="10" x2="11" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="13" x2="11" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Télécharger PDF
+    </button>
+    <button class="btn btn-ghost" onclick="closeSheets()">Annuler</button>
+  </div>
+</div>
+
+<!-- Hidden inputs -->
+<input type="file" id="imp-xl" accept=".xlsx,.xls,.csv" style="display:none" onchange="importXL(event)">
+<input type="file" id="imp-json" accept=".json" style="display:none" onchange="importJSON(event)">
+<div id="toast"></div>
+
+<script>
+// ===== GLOBALS =====
+let DB = { config:{name:'',city:'',panels:0,power:0,contractDate:'',method:'monthly',lat:null,lon:null,theme:'auto'}, tarifs:[], readings:{} };
+let FB = null; // Firestore instance
+let fbDoc = null; // document reference
+let fbUnsub = null; // unsubscribe realtime
+let fbUserId = null;
+let isSyncing = false;
+let curYear = new Date().getFullYear();
+let entryCtx = null; // {year,month}
+let settingKey = null, settingType = null;
+let editTarif = null;
+const MO = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+const MOF = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+let chartHome=null, chartProd=null, chartCmp=null;
+
+// ===== SPLASH SUN BUILD =====
+(function buildSun(){
+  const wrap = document.getElementById('splash-sun');
+  const rays = document.createElement('div'); rays.className='splash-rays'; wrap.appendChild(rays);
+  for(let i=0;i<12;i++){
+    const r=document.createElement('div'); r.className='splash-ray';
+    r.style.cssText=`height:16px;bottom:50%;left:50%;transform-origin:bottom center;transform:translateX(-50%) rotate(${i*30}deg) translateY(-28px)`;
+    rays.appendChild(r);
+  }
+  const core=document.createElement('div'); core.className='splash-core'; wrap.appendChild(core);
+})();
+
+// ===== LOCAL STORAGE =====
+function ls_load(){ try{ const d=localStorage.getItem('sp3'); if(d) DB=JSON.parse(d); }catch(e){} }
+function ls_save(){ localStorage.setItem('sp3',JSON.stringify(DB)); }
+function ls_loadFB(){ return { cfg: localStorage.getItem('sp3_fb_cfg'), uid: localStorage.getItem('sp3_fb_uid') }; }
+function ls_saveFB(cfg,uid){ localStorage.setItem('sp3_fb_cfg',cfg); localStorage.setItem('sp3_fb_uid',uid); }
+
+// ===== FIREBASE =====
+async function initFirebase(cfgStr, userId){
+  try {
+    const cfg = typeof cfgStr === 'string' ? JSON.parse(cfgStr) : cfgStr;
+    const {initializeApp,getFirestore,doc,setDoc,onSnapshot,getDoc} = window._fbModules;
+    const app = initializeApp(cfg, 'sp3_' + Math.random());
+    const db = getFirestore(app);
+    const ref = doc(db, 'users', userId);
+    FB = { db, ref, setDoc, onSnapshot, getDoc };
+    fbUserId = userId;
+    // Listen for realtime changes
+    if(fbUnsub) fbUnsub();
+    fbUnsub = onSnapshot(ref, snap => {
+      if(snap.exists()){
+        const data = snap.data();
+        if(data && data.db) {
+          DB = JSON.parse(data.db);
+          ls_save();
+          refreshAllViews();
+        }
+      }
+    });
+    setSyncStatus('ok');
+    showToast('☁️ Connecté au cloud ✓');
+    return true;
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    setSyncStatus('err');
+    return false;
+  }
+}
+
+async function fbSave(){
+  if(!FB) { ls_save(); return; }
+  setSyncStatus('sync');
+  try {
+    await FB.setDoc(FB.ref, { db: JSON.stringify(DB), updatedAt: Date.now() });
+    setSyncStatus('ok');
+  } catch(e) {
+    console.error('fbSave error:', e);
+    setSyncStatus('err');
+    ls_save(); // fallback
+  }
+}
+
+function setSyncStatus(s){
+  const badge = document.getElementById('sync-indicator');
+  const dot = document.getElementById('csd');
+  const txt = document.getElementById('csdt');
+  if(!badge) return;
+  badge.className = 'sync-badge ' + s;
+  badge.querySelector('.sync-dot').className = 'sync-dot ' + s;
+  const labels = { ok: 'SYNC ✓', err: 'LOCAL', sync: 'SYNC…' };
+  badge.querySelector('.sync-dot').className = 'sync-dot ' + s;
+  badge.lastChild.textContent = labels[s] || s;
+  if(dot){ dot.className='sync-dot '+s; }
+  if(txt){ txt.textContent = s==='ok'?'Synchronisé':s==='err'?'Hors-ligne':s==='sync'?'Synchro…':''; }
+  const cbadge = document.getElementById('cloud-status-badge');
+  if(cbadge){ cbadge.className='sync-badge '+s; cbadge.querySelector('.sync-dot').className='sync-dot '+s; cbadge.querySelector('span').textContent=labels[s]||s; }
+}
+
+async function connectFirebase(){
+  const cfgRaw = document.getElementById('fb-config-input').value.trim();
+  const uid = document.getElementById('fb-user-id').value.trim().replace(/[^a-zA-Z0-9_-]/g,'') || 'default';
+  if(!cfgRaw){ showToast('Collez la config Firebase'); return; }
+  showToast('Connexion…');
+  const ok = await initFirebase(cfgRaw, uid);
+  if(ok){
+    ls_saveFB(cfgRaw, uid);
+    document.getElementById('cloud-modal').classList.remove('show');
+    if(!DB.config.name) showWizard();
+    else launchApp();
+  } else {
+    showToast('❌ Erreur de connexion Firebase');
+  }
+}
+
+function skipCloud(){
+  document.getElementById('cloud-modal').classList.remove('show');
+  setSyncStatus('err');
+  if(!DB.config.name) showWizard();
+  else launchApp();
+}
+
+function openCloudModal(){ document.getElementById('cloud-modal').classList.add('show'); }
+
+// ===== BOOT =====
+window.addEventListener('load', async () => {
+  ls_load();
+  applyTheme(DB.config.theme || 'auto');
+  document.getElementById('splash-sync').textContent = 'CHARGEMENT…';
+
+  // Try to reconnect Firebase automatically
+  const {cfg, uid} = ls_loadFB();
+  if(cfg && uid){
+    document.getElementById('splash-sync').textContent = 'CONNEXION CLOUD…';
+    try {
+      await initFirebase(cfg, uid);
+    } catch(e) {
+      setSyncStatus('err');
+    }
+  } else {
+    setSyncStatus('err');
+  }
+
+  await delay(1400);
+  document.getElementById('splash').style.transition='opacity .5s';
+  document.getElementById('splash').style.opacity='0';
+  await delay(500);
+  document.getElementById('splash').style.display='none';
+
+  if(!DB.config.name){
+    // First time - show cloud setup then wizard
+    if(!cfg){ document.getElementById('cloud-modal').classList.add('show'); }
+    else { showWizard(); }
+  } else {
+    launchApp();
+  }
+});
+
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function showWizard(){ document.getElementById('wizard').classList.add('show'); }
+
+function launchApp(){
+  document.getElementById('wizard').classList.remove('show');
+  document.getElementById('app').classList.add('show');
+  refreshAllViews();
+  loadMeteo();
+  updateNow();
+}
+
+function refreshAllViews(){
+  renderHome();
+  renderGrid();
+  renderRelevesCharts();
+  renderOA();
+  renderSettings();
+}
+
+// ===== WIZARD =====
+let wizStep=0;
+function wNext(from){
+  if(from===0){
+    const name=document.getElementById('w-name').value.trim();
+    if(!name){ showToast('Entrez un nom'); return; }
+    DB.config.name=name; DB.config.city=document.getElementById('w-city').value.trim();
+    DB.config.panels=parseInt(document.getElementById('w-panels').value)||0;
+    DB.config.power=parseFloat(document.getElementById('w-power').value)||0;
+  }
+  if(from===1){
+    const cd=document.getElementById('w-cdate').value;
+    if(!cd){ showToast('Entrez la date du contrat'); return; }
+    DB.config.contractDate=cd;
+    const t1=parseFloat(document.getElementById('w-tarif1').value);
+    if(t1>0) DB.tarifs=[{order:1,price:t1}];
+    DB.config.method=document.getElementById('w-method').value;
+  }
+  if(from===2){
+    const la=parseFloat(document.getElementById('w-lat').value);
+    const lo=parseFloat(document.getElementById('w-lon').value);
+    if(!isNaN(la)) DB.config.lat=la;
+    if(!isNaN(lo)) DB.config.lon=lo;
+  }
+  fbSave();
+  showWizStep(from+1);
+}
+function wPrev(from){ showWizStep(from-1); }
+function showWizStep(n){
+  document.querySelectorAll('.wiz-step').forEach((s,i)=>s.classList.toggle('on',i===n));
+  document.querySelectorAll('.wdot').forEach((d,i)=>{d.classList.remove('on','done');if(i<n)d.classList.add('done');else if(i===n)d.classList.add('on');});
+  wizStep=n;
+}
+function finishWiz(){ fbSave(); launchApp(); }
+
+// ===== THEME =====
+function applyTheme(t){
+  DB.config.theme=t;
+  const root=document.documentElement;
+  root.classList.remove('theme-auto','theme-light','theme-dark');
+  if(t==='auto') root.classList.add('theme-auto');
+  else if(t==='light') root.classList.add('theme-light');
+  const el=document.getElementById('sv-theme');
+  const labels={auto:'Automatique',light:'Clair',dark:'Sombre'};
+  if(el) el.textContent=labels[t]||t;
+}
+function cycleTheme(){
+  const ts=['auto','dark','light'];
+  const i=ts.indexOf(DB.config.theme||'auto');
+  applyTheme(ts[(i+1)%3]);
+  fbSave();
+  setTimeout(()=>{ if(chartProd||chartCmp) renderRelevesCharts(); },100);
+}
+
+// ===== TABS =====
+function switchTab(tab){
+  document.querySelectorAll('.ti').forEach(t=>t.classList.toggle('on',t.dataset.tab===tab));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id==='s-'+tab));
+  if(tab==='releves'){renderGrid();renderRelevesCharts();}
+  if(tab==='oa') renderOA();
+  if(tab==='home'){renderHome();loadMeteo();}
+  if(tab==='settings') renderSettings();
+}
+
+// ===== DATA HELPERS =====
+function gk(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
+
+function mKwh(key){
+  const r=DB.readings[key];
+  if(!r) return 0;
+  if(r.kwh!==undefined&&r.kwh!==null&&r.kwh!=='') return parseFloat(r.kwh)||0;
+  if(r.index!==undefined){
+    const [yr,mo]=key.split('-').map(Number);
+    const pm=mo===1?12:mo-1; const py=mo===1?yr-1:yr;
+    const pk=gk(py,pm); const pr=DB.readings[pk];
+    if(pr&&pr.index!==undefined) return Math.max(0,parseFloat(r.index)-parseFloat(pr.index));
+  }
+  return 0;
+}
+
+function getPeriods(){
+  if(!DB.config.contractDate) return [];
+  const start=new Date(DB.config.contractDate); const now=new Date(); const ps=[];
+  for(let i=0;i<30;i++){
+    const s=new Date(start); s.setFullYear(s.getFullYear()+i);
+    const e=new Date(start); e.setFullYear(e.getFullYear()+i+1); e.setDate(e.getDate()-1);
+    if(s>now) break;
+    const tarif=DB.tarifs.find(t=>t.order===i+1);
+    ps.push({n:i+1,start:s,end:e,price:tarif?tarif.price:null});
+  }
+  return ps;
+}
+
+function kwhForPeriod(ps,pe){
+  let tot=0; const cur=new Date(ps.getFullYear(),ps.getMonth(),1);
+  while(cur<=pe){
+    const yr=cur.getFullYear(),mo=cur.getMonth()+1,key=gk(yr,mo),kwh=mKwh(key);
+    if(kwh>0){
+      const ms=new Date(yr,mo-1,1),me=new Date(yr,mo,0),dim=me.getDate();
+      const from=ms<ps?ps:ms,to=me>pe?pe:me;
+      const days=(to-from)/86400000+1;
+      tot+=kwh*(days/dim);
+    }
+    cur.setMonth(cur.getMonth()+1);
+  }
+  return tot;
+}
+
+function curTarif(key){
+  if(!DB.config.contractDate||DB.tarifs.length===0) return 0;
+  const [yr,mo]=key.split('-').map(Number);
+  const date=new Date(yr,mo-1,15);
+  for(const p of getPeriods()) if(date>=p.start&&date<=p.end&&p.price) return p.price;
+  return DB.tarifs.length>0?DB.tarifs[DB.tarifs.length-1].price:0;
+}
+
+function fmtDate(d){ return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtNum(n){ return Math.round(n).toLocaleString('fr-FR'); }
+function fmtEur(n){ return n.toFixed(2).replace('.',','); }
+
+// ===== HOME =====
+function updateNow(){
+  const now=new Date();
+  document.getElementById('h-year').textContent=now.getFullYear();
+}
+
+function renderHome(){
+  const now=new Date(),yr=now.getFullYear(),mo=now.getMonth()+1;
+  let yrKwh=0;
+  for(let m=1;m<=12;m++) yrKwh+=mKwh(gk(yr,m));
+  document.getElementById('h-kwh').innerHTML=`${fmtNum(yrKwh)}<span class="metric-unit"> kWh</span>`;
+  const monthKey=gk(yr,mo),tarif=curTarif(monthKey),yrRev=yrKwh*tarif;
+  document.getElementById('h-rev').innerHTML=`${fmtEur(yrRev)}<span class="metric-unit"> €</span>`;
+  document.getElementById('h-rev-sub').textContent=`Tarif actif: ${tarif.toFixed(4)} €/kWh`;
+  // Current month
+  document.getElementById('h-month-lbl').textContent=`${MO[mo-1].toUpperCase()} ${yr}`;
+  const mKwhVal=mKwh(monthKey);
+  document.getElementById('h-month-kwh').textContent=mKwhVal>0?fmtNum(mKwhVal)+' kWh':'—';
+  document.getElementById('h-month-rev').textContent=mKwhVal>0?fmtEur(mKwhVal*tarif)+' €':'Saisir →';
+  document.getElementById('h-tarif').textContent=tarif>0?tarif.toFixed(4):'—';
+  document.getElementById('h-install-name').textContent=(DB.config.name||'SOLAIREPRO').toUpperCase();
+  // Alert
+  const pm=mo===1?12:mo-1,py=mo===1?yr-1:yr,prevKwh=mKwh(gk(py,pm));
+  const alEl=document.getElementById('alert-miss');
+  if(prevKwh===0&&DB.config.name){ alEl.style.display='flex'; document.getElementById('alert-miss-txt').textContent=`Relevé manquant : ${MOF[pm-1]} ${py}`; }
+  else alEl.style.display='none';
+  // Mini chart
+  const data=[];for(let m=1;m<=12;m++) data.push(mKwh(gk(yr,m)));
+  document.getElementById('h-kwh-sub').textContent=yrKwh>0?`${data.filter(v=>v>0).length} mois saisis · moy. ${fmtNum(yrKwh/Math.max(1,data.filter(v=>v>0).length))} kWh`:'Saisissez vos relevés';
+  if(chartHome) chartHome.destroy();
+  chartHome=new Chart(document.getElementById('chart-home').getContext('2d'),{
+    type:'bar',data:{labels:MO,datasets:[{data,backgroundColor:data.map(v=>v>0?'rgba(255,184,48,0.7)':'rgba(255,255,255,0.06)'),borderColor:data.map(v=>v>0?'#ffb830':'rgba(255,255,255,0.1)'),borderWidth:1.5,borderRadius:8,hoverBackgroundColor:'rgba(255,184,48,0.9)'}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} kWh`}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(240,240,255,0.4)',font:{size:9,family:'Outfit'}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(240,240,255,0.4)',font:{size:9,family:'Outfit'}}}}}
+  });
+}
+
+// ===== RELEVES =====
+let inputMethod = 'monthly';
+function setMethod(m){
+  inputMethod=m;
+  document.getElementById('tm-monthly').classList.toggle('on',m==='monthly');
+  document.getElementById('tm-index').classList.toggle('on',m==='index');
+  renderGrid();
+}
+
+function chgYear(d){ const n=new Date().getFullYear(); if(curYear+d>n+1) return; curYear+=d; document.getElementById('rel-year').textContent=curYear; renderGrid(); renderRelevesCharts(); }
+
+function renderGrid(){
+  inputMethod=DB.config.method||'monthly';
+  document.getElementById('tm-monthly').classList.toggle('on',inputMethod==='monthly');
+  document.getElementById('tm-index').classList.toggle('on',inputMethod==='index');
+  const grid=document.getElementById('month-grid');
+  const now=new Date(),cy=now.getFullYear(),cm=now.getMonth()+1;
+  grid.innerHTML=''; let tot=0,cnt=0,best=0;
+  for(let m=1;m<=12;m++){
+    const key=gk(curYear,m),kwh=mKwh(key),r=DB.readings[key];
+    const isPast=curYear<cy||(curYear===cy&&m<cm);
+    const isCur=curYear===cy&&m===cm;
+    const isFut=curYear>cy||(curYear===cy&&m>cm);
+    if(kwh>0){ tot+=kwh; cnt++; if(kwh>best) best=kwh; }
+    const tarif=curTarif(key);
+    const cell=document.createElement('div');
+    cell.className='mc'+(kwh>0?' has':'')+(isCur?' today':'')+(isPast&&kwh===0?' miss':'');
+    cell.onclick=()=>openEntry(curYear,m);
+    let idxSub='';
+    if(inputMethod==='index'&&r&&r.index!==undefined) idxSub=`<div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:2px">${parseFloat(r.index).toLocaleString('fr-FR')}</div>`;
+    const rev=kwh>0?`<div class="mc-rev">${fmtEur(kwh*tarif)} €</div>`:'';
+    const dot=kwh>0?`<div class="mc-dot" style="background:var(--mint);box-shadow:0 0 6px var(--mint)"></div>`:isPast?`<div class="mc-dot" style="background:var(--rose)"></div>`:'';
+    cell.innerHTML=`${dot}<div class="mc-name">${MO[m-1]}</div><div class="mc-val" style="color:${kwh>0?'var(--sol)':isFut?'var(--text3)':'var(--rose)'}">${kwh>0?fmtNum(kwh)+' kWh':isFut?'—':'Manquant'}</div>${idxSub}${rev}`;
+    grid.appendChild(cell);
+  }
+  document.getElementById('stat-tot').textContent=tot>0?fmtNum(tot)+' kWh':'—';
+  document.getElementById('stat-avg').textContent=cnt>0?fmtNum(tot/cnt)+' kWh':'—';
+  document.getElementById('stat-best').textContent=best>0?fmtNum(best)+' kWh':'—';
+}
+
+function renderRelevesCharts(){
+  const data=[],data2=[];
+  for(let m=1;m<=12;m++){ data.push(mKwh(gk(curYear,m))); data2.push(mKwh(gk(curYear-1,m))); }
+  const tc='rgba(240,240,255,0.4)',gc='rgba(255,255,255,0.04)';
+  if(chartProd) chartProd.destroy();
+  chartProd=new Chart(document.getElementById('chart-prod').getContext('2d'),{
+    type:'line',data:{labels:MO,datasets:[{data,borderColor:'#ffb830',backgroundColor:'rgba(255,184,48,0.08)',borderWidth:2.5,tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#ffb830',pointBorderColor:'rgba(10,10,15,1)',pointBorderWidth:2}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:9,family:'Outfit'}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:9,family:'Outfit'}}}}}
+  });
+  if(chartCmp) chartCmp.destroy();
+  chartCmp=new Chart(document.getElementById('chart-cmp').getContext('2d'),{
+    type:'bar',data:{labels:MO,datasets:[{label:String(curYear),data,backgroundColor:'rgba(255,184,48,0.65)',borderRadius:5,borderSkipped:false},{label:String(curYear-1),data:data2,backgroundColor:'rgba(255,255,255,0.1)',borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:tc,font:{size:10,family:'Outfit'},boxWidth:10}}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:9,family:'Outfit'}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:9,family:'Outfit'}}}}}
+  });
+}
+
+// ===== ENTRY SHEET =====
+function openEntry(y,m){
+  entryCtx={year:y,month:m};
+  const key=gk(y,m),r=DB.readings[key]||{};
+  const isMo=inputMethod==='monthly';
+  document.getElementById('sh-entry-title').textContent=`${MOF[m-1]} ${y}`;
+  document.getElementById('eg-monthly').style.display=isMo?'flex':'none';
+  document.getElementById('eg-index').style.display=!isMo?'flex':'none';
+  if(isMo) document.getElementById('e-kwh').value=r.kwh!==undefined?r.kwh:'';
+  else{
+    document.getElementById('e-index').value=r.index!==undefined?r.index:'';
+    const pm=m===1?12:m-1,py=m===1?y-1:y,pr=DB.readings[gk(py,pm)];
+    document.getElementById('e-index-hint').textContent=pr&&pr.index!==undefined?`Index précédent: ${pr.index} kWh`:'Saisissez d\'abord le mois précédent';
+  }
+  document.getElementById('e-notes').value=r.notes||'';
+  openSheet('sh-entry');
+}
+
+function saveEntry(){
+  if(!entryCtx) return;
+  const {year,month}=entryCtx,key=gk(year,month);
+  if(!DB.readings[key]) DB.readings[key]={};
+  if(inputMethod==='monthly'){
+    const v=parseFloat(document.getElementById('e-kwh').value);
+    if(isNaN(v)||v<0){ showToast('Valeur invalide'); return; }
+    DB.readings[key].kwh=v; delete DB.readings[key].index;
+  } else {
+    const v=parseFloat(document.getElementById('e-index').value);
+    if(isNaN(v)||v<0){ showToast('Index invalide'); return; }
+    DB.readings[key].index=v; delete DB.readings[key].kwh;
+  }
+  DB.readings[key].notes=document.getElementById('e-notes').value;
+  fbSave(); closeSheets(); renderGrid(); renderRelevesCharts(); renderHome(); renderOA();
+  showToast('✓ Relevé enregistré');
+}
+
+// ===== OA =====
+function renderOA(){
+  const periods=getPeriods();
+  let totKwh=0,totRev=0;
+  const container=document.getElementById('oa-rows');
+  container.innerHTML='';
+  if(periods.length===0){
+    container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2);font-size:14px">Configurez votre contrat dans ⚙️ Réglages</div>';
+    document.getElementById('oa-total').innerHTML='—<span class="tc-unit"> €</span>';
+    document.getElementById('oa-total-kwh').textContent='— kWh injectés';
+    return;
+  }
+  periods.forEach((p,i)=>{
+    const kwh=kwhForPeriod(p.start,p.end),rev=p.price?kwh*p.price:null;
+    totKwh+=kwh; if(rev!==null) totRev+=rev;
+    const row=document.createElement('div');
+    row.className='oa-row '+(p.price?'has-tarif':'no-tarif')+' ain';
+    row.style.animationDelay=(i*0.05)+'s';
+    row.innerHTML=`
+      <div style="flex:1">
+        <div class="oa-period-n">Période ${p.n}</div>
+        <div class="oa-dates">${fmtDate(p.start)} → ${fmtDate(p.end)}</div>
+        <div class="oa-kwh">${kwh>0?fmtNum(kwh)+' kWh':'— kWh'}</div>
+        ${p.price?`<div class="oa-tarif-badge">${p.price.toFixed(4)} €/kWh</div>`:'<div style="font-size:11px;color:var(--rose);font-weight:700;margin-top:4px">⚠ Tarif manquant</div>'}
+      </div>
+      <div style="text-align:right">
+        <div class="oa-rev">${rev!==null&&kwh>0?fmtEur(rev)+' €':'—'}</div>
+      </div>`;
+    container.appendChild(row);
+  });
+  document.getElementById('oa-total').innerHTML=`${totRev>0?fmtEur(totRev):'—'}<span class="tc-unit"> €</span>`;
+  document.getElementById('oa-total-kwh').textContent=totKwh>0?fmtNum(totKwh)+' kWh injectés':'Saisissez vos relevés';
+}
+
+// ===== SETTINGS RENDER =====
+function renderSettings(){
+  const c=DB.config;
+  document.getElementById('sv-name').textContent=c.name||'—';
+  document.getElementById('sv-city').textContent=c.city||'—';
+  document.getElementById('sv-panels').textContent=(c.panels||'—')+(c.panels?' panneaux':'');
+  document.getElementById('sv-power').textContent=(c.power||'—')+(c.power?' kWc':'');
+  document.getElementById('sv-cdate').textContent=c.contractDate?new Date(c.contractDate).toLocaleDateString('fr-FR'):'—';
+  document.getElementById('sv-method').textContent=c.method==='index'?'Index compteur':'Mensuel direct';
+  document.getElementById('sv-lat').textContent=c.lat||'—';
+  document.getElementById('sv-lon').textContent=c.lon||'—';
+  const labels={auto:'Automatique',light:'Clair',dark:'Sombre'};
+  document.getElementById('sv-theme').textContent=labels[c.theme||'auto']||'—';
+  renderTarifList();
+}
+
+function renderTarifList(){
+  const list=document.getElementById('tarif-list');
+  const periods=getPeriods(); list.innerHTML='';
+  if(periods.length===0){ list.innerHTML='<div style="padding:0 0 12px;color:var(--text2);font-size:13px">Aucun tarif configuré</div>'; return; }
+  periods.forEach(p=>{
+    const row=document.createElement('div'); row.className='tr';
+    row.innerHTML=`<div class="tr-info"><div class="tr-period">P${p.n} · ${fmtDate(p.start)} → ${fmtDate(p.end)}</div><div class="tr-price">${p.price?p.price.toFixed(4)+' €/kWh':'⚠ À saisir'}</div></div><div class="tr-actions"><button class="tr-btn" onclick="editTarifPeriod(${p.n})">✏️</button><button class="tr-btn del" onclick="delTarif(${p.n})">✕</button></div>`;
+    list.appendChild(row);
+  });
+}
+
+// ===== TARIFS =====
+function openAddTarif(){ editTarif=null; document.getElementById('sh-tarif-title').textContent='Ajouter un tarif'; document.getElementById('t-price').value=''; document.getElementById('t-order').value=getPeriods().length+1; openSheet('sh-tarif'); }
+function editTarifPeriod(n){ editTarif=n; const t=DB.tarifs.find(x=>x.order===n); document.getElementById('sh-tarif-title').textContent=`Modifier période ${n}`; document.getElementById('t-price').value=t?t.price:''; document.getElementById('t-order').value=n; openSheet('sh-tarif'); }
+function saveTarif(){
+  const price=parseFloat(document.getElementById('t-price').value),order=parseInt(document.getElementById('t-order').value);
+  if(isNaN(price)||price<=0){ showToast('Tarif invalide'); return; }
+  if(isNaN(order)||order<1){ showToast('Numéro invalide'); return; }
+  const idx=DB.tarifs.findIndex(t=>t.order===order);
+  if(idx>=0) DB.tarifs[idx].price=price; else DB.tarifs.push({order,price});
+  DB.tarifs.sort((a,b)=>a.order-b.order);
+  fbSave(); closeSheets(); renderSettings(); renderOA(); renderHome();
+  showToast('✓ Tarif enregistré');
+}
+function delTarif(n){ DB.tarifs=DB.tarifs.filter(t=>t.order!==n); fbSave(); renderSettings(); renderOA(); showToast('Tarif supprimé'); }
+
+// ===== EDIT CONFIG =====
+function editCfg(key, type='text'){
+  settingKey=key; settingType=type;
+  const labels={name:'Nom',city:'Ville',panels:'Panneaux',power:'Puissance (kWc)',contractDate:'Date de début contrat',method:'Méthode de saisie',lat:'Latitude',lon:'Longitude'};
+  document.getElementById('sh-setting-title').textContent=labels[key]||key;
+  const fg=document.getElementById('sh-setting-fg');
+  fg.innerHTML='';
+  if(type==='select'){
+    const sel=document.createElement('select'); sel.className='fs'; sel.id='s-input';
+    if(key==='method'){
+      sel.innerHTML='<option value="monthly">Production mensuelle directe</option><option value="index">Index compteur cumulatif</option>';
+      sel.value=DB.config[key]||'monthly';
+    }
+    fg.appendChild(sel);
+  } else {
+    const inp=document.createElement('input'); inp.className='fi'; inp.id='s-input';
+    inp.type=type; inp.value=DB.config[key]!==undefined&&DB.config[key]!==null?DB.config[key]:'';
+    if(type==='number') inp.step='any';
+    fg.appendChild(inp);
+  }
+  openSheet('sh-setting');
+}
+function saveCfg(){
+  const inp=document.getElementById('s-input');
+  let val=inp.value;
+  if(['panels'].includes(settingKey)) val=parseInt(val);
+  else if(['power','lat','lon'].includes(settingKey)) val=parseFloat(val);
+  DB.config[settingKey]=val;
+  if(settingKey==='method') inputMethod=val;
+  fbSave(); closeSheets(); renderSettings(); renderHome(); renderOA();
+  showToast('✓ Réglage enregistré');
+}
+
+// ===== PDF =====
+function openPdfSheet(){
+  const periods=getPeriods(),sel=document.getElementById('pdf-sel');
+  sel.innerHTML='';
+  periods.forEach(p=>{ const o=document.createElement('option'); o.value=p.n; o.textContent=`Période ${p.n} — ${fmtDate(p.start)} → ${fmtDate(p.end)}`; sel.appendChild(o); });
+  openSheet('sh-pdf');
+}
+function genPDF(){
+  const pn=parseInt(document.getElementById('pdf-sel').value);
+  const p=getPeriods().find(x=>x.n===pn);
+  if(!p){ showToast('Période introuvable'); return; }
+  const kwh=kwhForPeriod(p.start,p.end),rev=p.price?(kwh*p.price).toFixed(2):'0.00';
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  // Background
+  doc.setFillColor(10,10,15); doc.rect(0,0,210,297,'F');
+  // Header gradient
+  doc.setFillColor(30,20,5); doc.rect(0,0,210,45,'F');
+  // Orange bar
+  doc.setFillColor(255,184,48); doc.rect(0,43,210,3,'F');
+  // Title
+  doc.setTextColor(255,184,48); doc.setFontSize(24); doc.setFont('helvetica','bold');
+  doc.text('AUTOFACTURE EDF OA',15,22);
+  doc.setTextColor(200,180,130); doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text('Obligation d\'Achat — Production solaire photovoltaïque',15,32);
+  doc.setTextColor(160,150,130); doc.setFontSize(9);
+  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} par SolairePro`,15,40);
+  // Sections
+  const section=(y,title)=>{ doc.setTextColor(255,184,48); doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.text(title.toUpperCase(),15,y); doc.setFillColor(255,184,48); doc.rect(15,y+2,60,0.5,'F'); };
+  section(58,'Installation');
+  doc.setTextColor(220,220,240); doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(`Nom : ${DB.config.name||'—'}`,15,67);
+  doc.text(`Ville : ${DB.config.city||'—'}`,15,74);
+  doc.text(`Puissance : ${DB.config.power||'—'} kWc — ${DB.config.panels||'—'} panneaux`,15,81);
+  section(94,'Période de facturation');
+  doc.setTextColor(220,220,240); doc.setFontSize(11);
+  doc.text(`Période ${p.n} : du ${fmtDate(p.start)} au ${fmtDate(p.end)}`,15,103);
+  // Table header
+  doc.setFillColor(25,25,35); doc.roundedRect(15,114,180,12,2,2,'F');
+  doc.setTextColor(255,184,48); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('Description',19,122); doc.text('kWh',110,122); doc.text('Tarif €/kWh',138,122); doc.text('Montant €',168,122);
+  // Table row
+  doc.setFillColor(18,18,26); doc.roundedRect(15,126,180,14,2,2,'F');
+  doc.setTextColor(220,220,240); doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text('Production injectée réseau',19,135); doc.text(fmtNum(kwh),110,135); doc.text(p.price?p.price.toFixed(4):'—',138,135); doc.text(rev,168,135);
+  // Total
+  doc.setFillColor(0,100,60); doc.roundedRect(110,148,85,18,3,3,'F');
+  doc.setFillColor(0,229,160); doc.roundedRect(110,148,85,18,3,3,'S');
+  doc.setTextColor(0,229,160); doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(`TOTAL : ${rev} €`,115,160);
+  // Footer
+  doc.setTextColor(80,80,100); doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('Document non officiel — à valider avec EDF OA',15,280);
+  doc.text(`SolairePro · Période ${p.n} · ${DB.config.name||''}`,15,286);
+  doc.save(`autofacture_edfoa_p${p.n}_${DB.config.name?.replace(/\s+/g,'_')||'export'}.pdf`);
+  closeSheets(); showToast('✓ PDF généré');
+}
+
+// ===== METEO =====
+async function loadMeteo(){
+  if(!DB.config.lat||!DB.config.lon){ document.getElementById('meteo-row').innerHTML='<div class="mcard"><div class="mday" style="font-size:11px;color:var(--text2)">Configurez votre position</div></div>'; return; }
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${DB.config.lat}&longitude=${DB.config.lon}&daily=weathercode,temperature_2m_max,shortwave_radiation_sum&timezone=auto&forecast_days=7`;
+    const r=await fetch(url),d=await r.json();
+    const pow=DB.config.power||3;
+    const row=document.getElementById('meteo-row'); row.innerHTML='';
+    const days=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    d.daily.time.forEach((date,i)=>{
+      const dt=new Date(date),wc=d.daily.weathercode[i],temp=Math.round(d.daily.temperature_2m_max[i]);
+      const rad=d.daily.shortwave_radiation_sum[i],kwh=Math.round(rad*pow*0.15*10)/10;
+      const card=document.createElement('div'); card.className='mcard'+(i===0?' today':'');
+      card.innerHTML=`<div class="mday">${i===0?'Auj.':days[dt.getDay()]}</div><div class="micon">${wIcon(wc)}</div><div class="mtemp">${temp}°</div><div class="mkwh">~${kwh} kWh</div>`;
+      row.appendChild(card);
+    });
+  }catch(e){ document.getElementById('meteo-row').innerHTML='<div class="mcard"><div class="mday" style="color:var(--rose);font-size:11px">Erreur météo</div></div>'; }
+}
+function wIcon(c){ if(c===0)return'☀️';if(c<=2)return'🌤️';if(c<=3)return'☁️';if(c<=49)return'🌫️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌥️'; }
+
+// ===== GEO =====
+function doGeolocate(latId,lonId){
+  if(!navigator.geolocation){ showToast('Géoloc non disponible'); return; }
+  navigator.geolocation.getCurrentPosition(p=>{
+    const la=p.coords.latitude.toFixed(4),lo=p.coords.longitude.toFixed(4);
+    const lEl=document.getElementById(latId),loEl=document.getElementById(lonId);
+    if(lEl) lEl.value=la;
+    if(loEl) loEl.value=lo;
+    showToast('✓ Position détectée');
+  },()=>showToast('Erreur géolocalisation'));
+}
+function geoAndSave(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(p=>{
+    DB.config.lat=parseFloat(p.coords.latitude.toFixed(4));
+    DB.config.lon=parseFloat(p.coords.longitude.toFixed(4));
+    fbSave(); renderSettings(); loadMeteo();
+    showToast('✓ Position enregistrée');
+  });
+}
+
+// ===== IMPORT EXCEL =====
+function importXL(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1});
+      let count=0;
+      data.forEach(row=>{
+        if(!row||row.length<2) return;
+        let year,month,kwh;
+        if(typeof row[0]==='number'&&typeof row[1]==='number'&&row[0]>1000&&row[1]>=1&&row[1]<=12){ year=row[0];month=row[1];kwh=parseFloat(row[2]); }
+        if(!year){ const s=String(row[0]),m=s.match(/(\d{4})[\/\-](\d{1,2})/); if(m){ year=parseInt(m[1]);month=parseInt(m[2]);kwh=parseFloat(row[1]); } }
+        if(year&&month&&!isNaN(kwh)&&kwh>=0){ const key=gk(year,month); if(!DB.readings[key]) DB.readings[key]={}; DB.readings[key].kwh=kwh; count++; }
+      });
+      fbSave(); renderGrid(); renderRelevesCharts(); renderHome(); renderOA();
+      showToast(`✓ ${count} relevés importés`);
+    }catch(err){ showToast('Erreur import Excel'); }
+    e.target.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===== JSON EXPORT/IMPORT =====
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`solairepro_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✓ Export téléchargé');
+}
+function importJSON(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ try{ DB=JSON.parse(ev.target.result); fbSave(); applyTheme(DB.config.theme||'auto'); refreshAllViews(); showToast('✓ Import réussi'); }catch(err){ showToast('Fichier invalide'); } e.target.value=''; };
+  reader.readAsText(file);
+}
+function doReset(){ if(confirm('Réinitialiser toutes les données ?')){ localStorage.clear(); location.reload(); } }
+
+// ===== SHEETS =====
+function openSheet(id){ document.getElementById('overlay').classList.add('on'); document.getElementById(id).classList.add('on'); }
+function closeSheets(){ document.getElementById('overlay').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on')); }
+
+// Swipe down to dismiss
+document.querySelectorAll('.sheet').forEach(sh=>{
+  let sy=0;
+  sh.addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; },{passive:true});
+  sh.addEventListener('touchmove',e=>{ if(e.touches[0].clientY-sy>90) closeSheets(); },{passive:true});
+});
+
+// ===== TOAST =====
+let toastT=null;
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
