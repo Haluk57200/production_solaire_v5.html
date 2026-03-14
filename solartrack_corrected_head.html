@@ -1,0 +1,22 @@
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SolarTrack">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<title>SolarTrack</title>
+
+<!-- ✅ FIX 1 : icône iOS en PNG base64 (remplace le SVG data URI ignoré par iOS) -->
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAEyklEQVR42u3cwW3bMBSHcYvIAEaBXuQlukIX6AwFOobPGaNAZ+gCWaFLRJcCRTZITwFSN7FlSxTJx993TkDq8fPfz5TEYVcJ4zg+79As0zQNNcxjIDAiCT6QGJHkHkiMSHIPREYksQciI5LYicwoydrODERGpLROZEaktE5kRiSpByIjUguSyIxIaZ3IjEhSJzIjktRJuRCJtPYnBCiZ0onMiCR1IjMiSX2nRHl4vH+6+DeH416htuqhpTNaTOlEZkSS2rYdYrcc0hktp7SERtyEls5oPaWbTOg5W2Los86p1SKTWp3PCt1Cu3FaXFKr86m7qdUik1qdm205LhWT1Or8j9A1txtzi0jqvuv84nCKUGRYlyZajmufRvMB2EbQmp8SrL6HJjWZrxK6he06UpN5bh/dzLYdqckcouUgNZnDCk1qMocTeotFVId2aVLoW1Kjd6lvuf4WX+JtNqFJTeZwLQepyRyuh65R6lqei+hN5t0uyEEzh+O+aPIuGfv0f0sKFeHgmyHSe4Rbb0nl/BBtPbcopzgN0V6Mzb2QJb4Jcs8x0pFk4fahcy5+qbYm5xyjna83RD26YM2FrWlnZM15RjwsMuydwrWSurZtvrXmGfXk09C3vpdKXeue9dJ5Rj7G11Fg7yx07TdgXs/POdMdCT13sVuSeYnU0eXvIqEvLWKLMt8idQ9J3k3L8d5itizzNVL30pZ01UOfLmoEmedI3VOP3d2PwpfFjSTzOal7+8HY5S5HL4vc4+5H99t20Z6P7v3NnERm10VogNAAoX0tuz5CQ0JLZ9dJaIDQAKEBQusrO7zeux4K542OftZJywEtB0BogNAAoUFogNAAoYGcrHZjxc2LNnBykgV1vYQGCA0QGuheaCcnERogtPRyfYQGCA0QOuzXcs93bbtP6GiL3/sjCFoOEFpKuw5Ck8H8CU0KMhO6KznITOgwkpCZ0GFkITOhw0hDZkKHkYfM5xnGcXxWhnmUPLmTyBI6jFRkltDNJzaJCR1CbCITumnBCUxowI9CEBpojjsl0O9vTc7fDRKazKHGJTSZQ41PaDKHmgehyRxqPoRGKAgNQgOEBjZg9Rsrj/dPn5W1ah4kNNBrQh+O+wdlrZfatu0kNEBoaDnwJj+//dl8zC/fPyi8hI4hc8lxCU1mUhOazKQmdLcSkZrQIDRAaIDQAKEBQoPQAKEBQgOrkP1pu6+ffm9+UT9+fbSyEjqGzCXHRWChS0tFakKHk4nUhA4nEakJDRAaIDRAaIDQIDRAaKCs0NM0DcqACEzTNEhoaDkAQgNbCa2PRoT+WUJDywE0IfRabUdtrz8tnU9th40vnc/huK/qetaYz2t3U40S1TaPWqReax61SJ1jHql2mWoZv7TUa49fWupc46f3ortlqXONW0rqXOOWknrNcU+d/U/gcRyf/bRAK5wKnS79AdCKzFl7aKAEaa75QO3pfDahSY3WZNZyoI+WQ0qjxXSeldCkRisyz245SI0WZNZDo68eWkqjpXS+OqFJjZplvqnlIDVqlXm3e+PhpGvwIBNqEXmVH4XSGjXJvFhoUqMmmRe3HFoQ1CLyagktrVGTM9kElNYoEX7ZE5XY2PJbfNMWgdwkzk2xnpfcJA4lNMEJnIO/LD5RtldH2EwAAAAASUVORK5CYII=">
+
+<!-- ✅ FIX 2 : manifest correct avec icônes PNG -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22SolarTrack%22%2C%22short_name%22%3A%22SolarTrack%22%2C%22description%22%3A%22Suivi%20de%20production%20solaire%20%26%20EDF%20OA%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23FF9F0A%22%2C%22categories%22%3A%5B%22utilities%22%2C%22productivity%22%5D%7D">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
